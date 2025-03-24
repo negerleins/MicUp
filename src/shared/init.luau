@@ -39,8 +39,8 @@ local modules = {
 								__newindex = function(__self, index, value)
 									local __pe_data = rawget(__privated_data, index);
 									local __pc_data = rawget(__constructor_array, index);
-									local data = if __pe_data then __privated_data else __constructor_array;
 
+									local data = __pe_data and __privated_data or __constructor_array;
 									return rawset(data, index, value);
 								end
 							});
