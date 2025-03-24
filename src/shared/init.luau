@@ -1,5 +1,5 @@
 local modules = {
-	["Objecter"] = setmetatable({
+	["objecter"] = setmetatable({
 		global = {
 			["class"] = setmetatable({}, {
 				__call = function(self, __constructor_array)
@@ -96,19 +96,20 @@ local import = setmetatable({
 	__call = function(self, array)
 		return {
 			from = function(_, module)
-				local metadata = self.modules[module]
-				local output = {}
+				local metadata = self.modules[module];
+				local output = {};
 
 				for index, name in array do
-					if name == string.lower(module) then
-						table.insert(output, metadata)
+					if name == module then
+						table.insert(output, metadata);
 					else
-						local object = metadata.global[name]
+						local object = metadata.global[name];
+
 						if object then
 							table.insert(output, object)
-						end
-					end
-				end
+						end;
+					end;
+				end;
 
 				return unpack(output)
 			end,
@@ -117,7 +118,7 @@ local import = setmetatable({
 	__metatable = "locked",
 })
 
-local class, constructor, private = import({ "class", "constructor", "private" }):from("Objecter")
+local class, constructor, private = import({ "class", "constructor", "private" }):from("objecter")
 
 local test = class({
 	Private = private "SecretToken",
