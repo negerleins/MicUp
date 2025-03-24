@@ -1,44 +1,92 @@
 local modules = {
-	["class"] = setmetatable({
+	["Objecter"] = setmetatable({
 		global = {
-			[1] = setmetatable({
-				name = "new",
-			}, {
-				__call = function(self, array)
-					assert(array, "missing [array]:null")
-					assert(typeof(array) == "table", "invalid [array]:type")
+			["class"] = setmetatable({}, {
+				__call = function(self, __constructor_array)
+					assert(__constructor_array, "missing [array]:null")
+					assert(typeof(__constructor_array) == "table", "invalid [array]:type")
 
-					assert(array[1], "missing [index]:constructor")
-					assert(getmetatable(array[1]), "invalid [index]:type")
+					assert(__constructor_array[1], "missing [index]:constructor")
+					assert(getmetatable(__constructor_array[1]), "invalid [index]:type")
 
-					local constructor = array[1];
-					constructor();
+					local constructor = __constructor_array[1]
+					table.remove(__constructor_array, 1)
+
+					local __privated_data = {};
+
+					for index, data in __constructor_array do
+						if getmetatable(data) == "private" then
+							local __claimed_data = data:claim();
+							rawset(__privated_data, index, __claimed_data);
+							rawset(__constructor_array, index, nil);
+						else
+							continue
+						end;
+					end;
+
+					return constructor(__constructor_array, __privated_data);
 				end,
+				__metatable = "locked",
 			}),
-			[2] = setmetatable({
-				name = "conmstructor",
-			}, {
+			["constructor"] = setmetatable({}, {
 				__call = function(self, method)
-					return setmetatable({
-						global = {},
-						private = {},
+					return setmetatable({}, {
+						__call = function(self, __constructor_array, __privated_data)
+							local metadata = setmetatable({}, {
+								__index = function(__self, index)
+									return rawget(__privated_data, index) or rawget(__constructor_array, index);
+								end,
+								__newindex = function(__self, index, value)
+									local __pe_data = rawget(__privated_data, index);
+									local __pc_data = rawget(__constructor_array, index);
+									local data = if __pe_data then __privated_data else __constructor_array;
 
-					}, {
-						__call = function(self)
-							method(self);
+									return rawset(data, index, value);
+								end
+							});
+
+							method(metadata);
+							return __constructor_array;
 						end,
+						__metatable = "constructor"
 					})
 				end,
+				__metatable = "locked",
+			}),
+			["private"] = setmetatable({}, {
+				__call = function(self, content)
+					return setmetatable({ __unclaimed_data = content }, {
+						__index = {
+							claim = function(__self)
+								local data = __self["__unclaimed_data"];
+
+								if data then
+									__self["__unclaimed_data"] = nil;
+									return data;
+								end;
+
+								return "__private_data";
+							end
+						},
+						__metatable = "private",
+					})
+				end,
+				__metatable = "locked",
 			}),
 		},
 	}, {
 		__index = function(self, index)
-			for _, object in self.global do
-				if object.name == index then
+			for name, object in self.global do
+				if name == index then
 					return object;
+				else
+					continue;
 				end;
-			end;
+			end
+
+			return nil
 		end,
+		__metatable = "locked",
 	}),
 }
 
@@ -47,20 +95,41 @@ local import = setmetatable({
 }, {
 	__call = function(self, array)
 		return {
-			from = function(_, name)
-				local module = self.modules[name]
-				return module, unpack(module.global)
+			from = function(_, module)
+				local metadata = self.modules[module]
+				local output = {}
+
+				for index, name in array do
+					if name == string.lower(module) then
+						table.insert(output, metadata)
+					else
+						local object = metadata.global[name]
+						if object then
+							table.insert(output, object)
+						end
+					end
+				end
+
+				return unpack(output)
 			end,
 		}
 	end,
+	__metatable = "locked",
 })
 
-local class, new, constructor = import({ "class", "new", "constructor" }):from("class")
+local class, constructor, private = import({ "class", "constructor", "private" }):from("Objecter")
 
-local class = new {
+local test = class({
+	Private = private "SecretToken",
+	Number = private(1),
+	Public = "I am a public string",
 	constructor(function(self)
-		warn(self)
+		self.Constructed = true;
+		warn(self.Private)
+		warn(self.Public)
 	end),
-}
+})
+
+print(test)
 
 return {}
