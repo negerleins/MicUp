@@ -3,7 +3,11 @@
   "tree": {
     "$className": "DataModel",
 
-    "ReplicatedStorage": {
+    "Suphis": {
+      "$path": "src/suphis"
+    },
+
+    "ReplicatedFirst": {
       "Shared": {
         "$path": "src/shared"
       }
@@ -12,11 +16,7 @@
     "ServerScriptService": {
       "Server": {
         "$path": "src/server"
-      },
-
-      "Suphis":{
-        "$path": "src/suphis"
-			}
+      }
     },
 
     "StarterPlayer": {
